@@ -93,14 +93,14 @@ Questions / issues / discussions
 
 -   How to map use nice persistent identifiers in the module?
 -   Intermediary .csv format or dividing the upload tool into two steps...
--   Nice if the batch upload be made from .csv ...
--   ... in order to avoid current specifics related to DynTaxa xml and provide a general upload tool?
+    -   Nice if the batch upload be made from .csv ...
+    -   ... in order to avoid current specifics related to DynTaxa xml and provide a general upload tool?
 -   Can the batch upload take more options?
--   For example destination (<http://localhost:7000>)
--   Also the client identifier and client secret, read from a .cfg?
+    -   For example destination (<http://localhost:7000>)
+    -   Also the client identifier and client secret, read from a .cfg?
 -   How to programmatically add a "client" to use for importing data?
--   Can we use `plutof-conf/oauth2_client.json`?
--   How to avoid any manual steps currently required at <http://localhost:7000/admin>?
+    -   Can we use `plutof-conf/oauth2_client.json`?
+    -   How to avoid any manual steps currently required at <http://localhost:7000/admin>?
 
 License
 -------
