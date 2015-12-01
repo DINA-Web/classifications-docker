@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Pulling latest sources"
-#./pre_up.sh
+./pre_up.sh
 
 echo "Starting dw-collections"
 docker-compose up -d
