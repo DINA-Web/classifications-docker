@@ -1,0 +1,7 @@
+taxon_id	parent_taxon_id	taxon_rank_id	epithet	author	year	code	vernacular_names	use_parentheses
+3000188	0	40	Lepidoptera	Linnaeus	1758	3000188	fjärilar:swe	
+2002975	3000188	48	Hesperioidea	Latreille	1809	2002975	tjockhuvudfjärilar:swe	
+2001250	2002975	50	Hesperiidae	Latreille	1809	2001250	tjockhuvuden:swe	
+1000492	2001250	53	Pyrginae	Burmeister	1878	1000492	visslare:swe	
+1000509	1000492	60	Erynnis	Schrank	1801	1000509		
+201018	1000509	70	tages	Linnaeus	1758	201018	skogsvisslare:swe	1

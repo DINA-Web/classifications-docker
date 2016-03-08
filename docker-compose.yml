@@ -16,7 +16,6 @@ es:
     - "9300:9300"
   volumes:
     - ./es-data:/usr/share/elasticsearch/data:rw
-    - ./es-conf:/usr/share/elasticsearch/config:rw
 
 web:
   build: .
