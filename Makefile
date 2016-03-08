@@ -21,11 +21,11 @@ init:
 data:
 	@echo "Pls use these credentials to upload data, a manual mod of the upload script is req for now..."
 	PGPASSWORD=taxonomy psql -h localhost -U taxonomy taxonomy -c "select name, client_id, client_secret from oauth2_client;"
-	python ./plutof-taxonomy-module/doc/csv_batch_upload.py -t 1 -b http://localhost:7000 ./plutof-data/tsv-testdata.csv
+	python ./plutof-taxonomy-module/doc/csv_batch_upload.py -t 1 -r 1 -b http://localhost:7000 ./plutof-data/lepidoptera.tsv
 	docker exec dwclassifications_web_1 sh -c "python manage.py populate_edge_list 1"
 	docker exec dwclassifications_web_1 sh -c "python manage.py populate_pre_traversal"
-	@echo "When browsing tree number 2, clicking the root node doesn't list the children?"
-	firefox http://localhost:7000/api/taxonomy/tree/2/
+	@echo "When browsing tree, clicking the root node doesn't list the children?"
+	firefox http://localhost:7000/api/taxonomy/tree/1/
 	
 build:
 	@echo "Pulling latest sources from the Pluto-F Taxonomy module"
