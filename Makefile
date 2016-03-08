@@ -21,8 +21,8 @@ init:
 data:
 	@echo "Pls use these credentials to upload data, a manual mod of the upload script is req for now..."
 	PGPASSWORD=taxonomy psql -h localhost -U taxonomy taxonomy -c "select name, client_id, client_secret from oauth2_client;"
-	python ./plutof-taxonomy-module/doc/csv_batch_upload.py -t 2 -b http://localhost:7000 ./plutof-data/tsv-testdata.csv
-	docker exec dwclassifications_web_1 sh -c "python manage.py populate_edge_list 2"
+	python ./plutof-taxonomy-module/doc/csv_batch_upload.py -t 1 -b http://localhost:7000 ./plutof-data/tsv-testdata.csv
+	docker exec dwclassifications_web_1 sh -c "python manage.py populate_edge_list 1"
 	docker exec dwclassifications_web_1 sh -c "python manage.py populate_pre_traversal"
 	@echo "When browsing tree number 2, clicking the root node doesn't list the children?"
 	firefox http://localhost:7000/api/taxonomy/tree/2/
@@ -33,7 +33,10 @@ build:
 	docker-compose build --no-cache web
 
 up:
-	docker-compose up -d
+	docker-compose up -d db es
+	sleep 10
+	docker-compose up -d web
+	sleep 5
 	firefox http://localhost:7000
 
 stop:
