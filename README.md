@@ -52,16 +52,18 @@ Customizations for the module are in these dirs:
 -   plutof-conf ... this contains various customizations to the PlutoF Classifications module
 -   plutof-data ... these are tools for data import and export
 
-Scripts
--------
+Makefile
+--------
 
-There are three scripts for bootstrapping the system:
+There is a Makefile for managing this composition of component:
 
--   up.sh ... NOTE! use this for starting up the first time
--   pre\_up.sh ... called by up.sh to the latest module
--   post\_up.sh ... called by up.sh to install module db schema and run tests
+-   make ... use this for building the image from scratch and starting up the first time (it runs init once and creates db)
+-   make clean ... use this for cleaning out and removing stuff completely
+-   make stop ... use this to stop a running system
+-   make up ... use this to start a stopped system
+-   make data ... use this to load test data (Lepidoptera tab separated values by default)
 
-After starting the system, use standard docker commands such as:
+You can also use `docker-compose` or `docker` commands directly, but the Makefile and using `make` will help to keep track of life-cycle management and save some typing. However, remember that after starting the system, you can freely use standard docker commands such as:
 
 ``` bash
 docker-compose ps
@@ -91,13 +93,9 @@ The above tools are used in two steps when loading data:
 Questions / issues / discussions
 ================================
 
--   How to map use nice persistent identifiers in the module?
--   Intermediary .csv format or dividing the upload tool into two steps...
-    -   Nice if the batch upload be made from .csv ...
-    -   ... in order to avoid current specifics related to DynTaxa xml and provide a general upload tool?
+-   What is the recommended way to load external persistent identifiers? Should we use the `code` field in the tab separated values file?
 -   Can the batch upload take more options?
-    -   For example destination (<http://localhost:7000>)
-    -   Also the client identifier and client secret, read from a .cfg?
+    -   Specifically the oauth2 client identifier and client secret, read from a .cfg?
 -   How to programmatically add a "client" to use for importing data?
     -   Can we use `plutof-conf/oauth2_client.json`?
     -   How to avoid any manual steps currently required at <http://localhost:7000/admin>?
