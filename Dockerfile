@@ -4,9 +4,7 @@ ENV PYTHONUNBUFFERED 1
 RUN mkdir /code
 ADD ./plutof-taxonomy-module /code/
 ADD ./plutof-conf/settings.py /code/taxonomy/
-ADD ./plutof-conf/Makefile /code/
-ADD ./plutof-conf/requirements.txt /code/
-ADD ./plutof-conf/init_once.sh /code/init_once.sh
+ADD ./plutof-conf/add_oauth2_client.py /code/
 ADD ./plutof-conf/docker-entrypoint.sh /
 
 WORKDIR /code
