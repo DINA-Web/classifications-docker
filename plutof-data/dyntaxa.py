@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-@author: markus
+"""Script for fetching dyntaxa data from SLU
+
 """
 
 import sys, getopt
@@ -8,6 +9,9 @@ import os.path
 from suds.client import Client
 from suds import WebFault
 from ConfigParser import SafeConfigParser
+
+__author__ = "Markus Skyttner"
+__license__ = "AGPLv3"
 
 CFG = "dyntaxa-credentials.cfg"
 IDS = "3000188"
