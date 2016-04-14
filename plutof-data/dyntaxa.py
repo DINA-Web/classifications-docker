@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-@author: markus
+"""Script for fetching dyntaxa data from SLU
+
 """
 
 import sys, getopt
@@ -9,8 +10,12 @@ from suds.client import Client
 from suds import WebFault
 from ConfigParser import SafeConfigParser
 
+__author__ = "Markus Skyttner"
+__license__ = "AGPLv3"
+
 CFG = "dyntaxa-credentials.cfg"
 IDS = "3000188"
+#IDS ="1005908"
 
 manual = "dyntaxa.py --cfg <default:" + CFG + "> --ids '<default:" + IDS + ">'"
 
@@ -74,12 +79,20 @@ for id in id_list:
   ids.int.append(id)
 #ids.int.append('6001047')
 
-search_criteria = {}
+ttss = client.factory.create('ns0:TaxonTreeSearchScope')
+
+search_criteria = client.factory.create('ns1:WebTaxonTreeSearchCriteria')
+
 search_criteria['TaxonIds'] = ids
+search_criteria['IsMainRelationRequired'] = True
+search_criteria['IsValidRequired'] = True
+search_criteria['Scope']=ttss.AllChildTaxa
+
 
 print "Retrieving ids: " + IDS
 try:
   result = client.service.GetTaxonTreesBySearchCriteria(wci, search_criteria)
+  #print result
 except WebFault, e:
   print e
   raise SystemExit(0)
