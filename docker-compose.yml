@@ -1,3 +1,8 @@
+fs:
+  image: tianon/true
+  volumes:
+    -./plutof-data:/tmp
+
 db:
   image: postgres:9.4.5
   environment:
@@ -24,3 +29,8 @@ web:
   links:
     - db:db
     - es:es
+
+cli:
+  build: cli
+  volumes_from:
+    - fs
