@@ -1,7 +1,7 @@
 fs:
   image: tianon/true
   volumes:
-    -./plutof-data:/tmp
+    - ./plutof-data:/tmp
 
 db:
   image: postgres:9.4.5

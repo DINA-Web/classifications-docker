@@ -27,7 +27,14 @@ data:
 
 test:
 	./plutof-conf/curl_test.sh
-	
+
+build-cli:
+	@echo "builds cli"
+	docker-compose build --no-cache cli
+
+export-dyntaxa:
+	docker-compose run cli
+
 build:
 	@echo "Pulling latest sources from the Pluto-F Taxonomy module"
 	git clone --depth=1 https://github.com/TU-NHM/plutof-taxonomy-module
