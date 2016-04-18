@@ -1,0 +1,166 @@
+---
+title: "DINA-Web Classifications"
+author: "DINA TC"
+date: "March 24, 2016"
+output: 
+  ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+BASE <- "http://mintbox:7000/"
+BASE <- "http://localhost:7000/"
+dwc_url <- function(url) paste0(BASE, url)
+```
+
+## Using a dockerized taxonomy module
+
+The `dw-classifications` module in the DINA-Web system is packaged as a Docker application at <https://github.com/dina-web/dw-classifications>. 
+
+This means you can run exactly the same bits on your laptop or on a server, using a rather simple procedure for spinning it up.
+
+Both ways (running it yourself or using an existing instance) will be covered.
+
+## Running on a laptop
+
+To run it on your laptop, you need to have `docker` and `docker-compose` and `git` and `make` installed on your system first. 
+
+Then you issue some commands:
+
+```bash
+  git clone https://github.com/dina-web/dw-classifications
+  cd dw-classifications
+  make
+  make data
+```
+
+After this you are running the module locally and can test it and use it locally, without need for an Internet or network connection.
+
+## Using an existing server
+
+For your convenience we did this on a machine on the network, which you can find here: <`r BASE`>.
+
+The module contains the REST API itself, its Swagger API docs and the original specifications available from a self-hosted welcome page: <`r dwc_url("v1/getting-started")`>.
+
+It also contains a link to the [original specification]( https://docs.google.com/document/d/1csSAat9kAnuZMk7wqImb7IWMjNM5rwFwkQS-OyVU5aM/edit?pref=2&pli=1).
+
+## Example usage
+
+First, login is required, or you will not get access to data:
+
+<http://localhost:7000/api-auth/login/?next=/api/taxonomy/>
+
+Use the web browser to log in, use credentials `admin` and `password12`.
+
+This, though, is not "automatable", so how would you login from code?
+
+You wonder: Does a user exist that has rights to read and write data? Do you know this user's credentials?
+
+## add_oauth_user.py
+
+```python
+from django.contrib.auth.models import User
+from provider.oauth2.models import Client
+
+u = User.objects.create_superuser(
+	'admin', 
+	'admin@example.com', 
+	'password12')
+
+c = Client(user = u, 
+	name = 'admin', 
+	url = 'http://test.url', 
+	redirect_uri = 'http://test.url', 
+	client_id = 'a27a3bc616b1ed2ff965',
+	client_secret = '9174b76bcba9ab2188ada16bd6eb7166d2b3c71b', 
+	client_type = 0)
+
+c.save()
+```
+
+## Login from script
+
+The universal bash approach:
+
+```bash
+#!/bin/bash
+
+echo "Request oauth2 token"
+TOKEN=$(curl -X POST -d \
+"grant_type=password&username=admin&password=password12" \
+-u"a27a3bc616b1ed2ff965:9174b76bcba9ab2188ada16bd6eb7166d2b3c71b" \
+http://localhost:7000/oauth2/access_token/ -s | tac | tac | \
+grep -P -o 'access_token.*?[[:alnum:]]{40}' | \
+grep -P -o "[[:alnum:]]{40}")
+
+echo "Got token $TOKEN"
+
+```
+
+## Extract data
+
+From bash, use curl to send a http request with the token in the header and use the relevant API endpoint that you can find in the Swagger API docs:
+
+```
+echo "Search for Lepidoptera"
+curl -q -s -H "Authorization: Bearer $TOKEN" \
+http://localhost:7000/api/taxonomy/taxon/search/?search_query=Lepidoptera \
+| json_pp
+```
+
+Kessy provides load scripts using Python.
+
+## Login using R
+
+```{r}
+library(httr)
+
+res <- 
+  POST(dwc_url("oauth2/access_token/"), 
+  encode = "form", 
+  body = list(
+    client_id = 'a27a3bc616b1ed2ff965',
+    client_secret = '9174b76bcba9ab2188ada16bd6eb7166d2b3c71b',
+    grant_type = "password", 
+    username = "admin", 
+    password = "password12",
+    scope = "write")
+  )
+
+token <- content(res)$access_token
+auth <- content(res)$token_type
+```
+
+## Extracting data with R
+
+```{r}
+library(purrr)
+
+res <- 
+  GET(dwc_url("api/taxonomy/taxon/search"), 
+    add_headers(Authorization = paste(auth, token)),
+    query = list(search_query = "Lepidoptera"))
+
+lepidoptera <- content(res)
+df <- map_df(lepidoptera$results, dplyr::as_data_frame)
+print(head(df, 3))
+```
+
+## Display results
+
+```{r echo=FALSE}
+library(DT)
+datatable(df, options = list(pageLength = 4))
+```
+
+# Use cases
+
+Test performance of dw-classifications
+
+1. Test of add while reading....  Up to 10 users are making a change or add / modifications, many modifications.
+
+2. The scenario: two users are making changes simultaneously at the same place, what happens with "tree locking"... Has this subtree changed? User 1 at t0 changes one species over to another genus (a,b) (c,d) -> (a)(b,c,d) and User 2 at t1 changes (e,f,g) - this is ok - but at t3 changes (a,b)(c,d) -> (b)(a,c,d)
+
+## Kevin use case
+
+Simple app that associates one collection object with several taxonomies / different trees...
