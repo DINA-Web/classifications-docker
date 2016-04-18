@@ -14,7 +14,8 @@ __author__ = "Markus Skyttner"
 __license__ = "AGPLv3"
 
 CFG = "dyntaxa-credentials.cfg"
-IDS = "3000188"
+IDS="0"
+#IDS = "3000188"
 #IDS ="1005908"
 
 manual = "dyntaxa.py --cfg <default:" + CFG + "> --ids '<default:" + IDS + ">'"

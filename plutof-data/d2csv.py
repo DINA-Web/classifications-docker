@@ -1,10 +1,14 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-@author: markus
+"""Script for converting dyntaxa-xml to csv for estonian taxonomy modul
+
 """
 import sys, getopt
 import os.path
 import xml.etree.cElementTree as cElementTree
+
+__author__ = "Markus Skyttner"
+__license__ = "AGPLv3"
 
 #ID = str(3000188)
 ID = str(0)
