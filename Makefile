@@ -18,23 +18,23 @@ init:
 
 ul-biota:
 	@echo "Packaging and uploading Dyntaxa biota dataset to Internet Archive"
-	cd plutof-data/ && tar cvfz ../biota.tsv.gz biota.tsv && cd ..
-	ia upload dw-classifications-data biota.tsv.gz --metadata="title:DINA-Web Classifications Data"
-	rm biota.tsv.gz
+	cd plutof-data/ && tar cvfz ../biota.tgz biota.tsv && cd ..
+	ia upload dw-classifications-data biota.tgz --metadata="title:DINA-Web Classifications Data"
+	rm biota.tgz
 	firefox https://archive.org/details/dw-classifications-data &
 
 dl-biota:
 	@echo "Downloading DINA-Web Classifications Datasets using wget"
-	wget http://archive.org/download/dw-classifications-data/biota.tsv.gz -O biota.tsv.gz
-	gunzip biota.tsv.gz
+	wget http://archive.org/download/dw-classifications-data/biota.tgz -O biota.tgz
+	tar xvfz biota.tgz
 	mv biota.tsv plutof-data
 
 dyntaxa-tree:
 	./create_dyntaxa_tree.sh
 
-data: dl-biota dyntaxa-tree
+data: dl-biota
 	@echo "Creating dyntaxa tree"
-	python ./plutof-conf/csv_batch_upload.py -t 1 -r 1 -b http://localhost:7000 ./plutof-data/biota.tsv
+	python ./plutof-conf/csv_batch_upload.py -r 1 -b http://localhost:7000 ./plutof-data/biota.tsv
 	docker exec dwclassifications_web_1 sh -c "python manage.py populate_edge_list 1"
 	docker exec dwclassifications_web_1 sh -c "python manage.py populate_pre_traversal"
 	@echo "When browsing tree, clicking the root node doesn't list the children?"
