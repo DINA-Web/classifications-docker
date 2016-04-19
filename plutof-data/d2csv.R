@@ -70,7 +70,7 @@ plutof <-
          author, year, code, vernacular_names, use_parentheses) %>%
   # TODO: ask Kessy to support taxon_rank_id = 0 in the load script
   mutate(taxon_rank_id = ifelse(taxon_rank_id == 0, 1, taxon_rank_id)) %>%
-  arrange(taxon_rank_id, parent_taxon_id, taxon_id)
+  arrange(taxon_rank_id, taxon_id, parent_taxon_id)
 
 # 3000188	0	40	Lepidoptera	Linnaeus	1758	3000188	fjärilar:swe	
 # 2002975	3000188	48	Hesperioidea	Latreille	1809	2002975	tjockhuvudfjärilar:swe	
