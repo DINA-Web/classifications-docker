@@ -34,7 +34,8 @@ dyntaxa-tree:
 
 data:
 	@echo "Creating dyntaxa tree"
-	python ./plutof-conf/csv_batch_upload.py -r 1 -b http://localhost:7000/api/ ./plutof-data/biota.tsv -a http://localhost:7000/oauth2/access_token/ 
+	#python ./plutof-conf/csv_batch_upload.py -r 1 -b http://localhost:7000/api/ ./plutof-data/biota.tsv -a http://localhost:7000/oauth2/access_token/ 
+	python ./plutof-taxonomy-module/doc/csv_batch_upload.py -c ./plutof-conf/credentials.cfg -r 1 ./plutof-data/biota.tsv
 	# start indexing in espt
 	#@echo "When browsing tree, clicking the root node doesn't list the children?"
 	#firefox http://localhost:7000/api/taxonomy/tree/1/
