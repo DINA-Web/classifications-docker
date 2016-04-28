@@ -13,4 +13,4 @@ WORKDIR /code
 RUN make dependencies
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["python", "manage.py", "runserver", "0.0.0.0:7000"]
+CMD ["make", "fast-server"]

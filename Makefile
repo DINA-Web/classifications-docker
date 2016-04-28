@@ -32,13 +32,12 @@ dl-biota:
 dyntaxa-tree:
 	./create_dyntaxa_tree.sh
 
-data: dl-biota
+data:
 	@echo "Creating dyntaxa tree"
-	python ./plutof-conf/csv_batch_upload.py -r 1 -b http://localhost:7000 ./plutof-data/biota.tsv
-	docker exec dwclassifications_web_1 sh -c "python manage.py populate_edge_list 1"
-	docker exec dwclassifications_web_1 sh -c "python manage.py populate_pre_traversal"
-	@echo "When browsing tree, clicking the root node doesn't list the children?"
-	firefox http://localhost:7000/api/taxonomy/tree/1/
+	python ./plutof-conf/csv_batch_upload.py -r 1 -b http://localhost:7000/api/ ./plutof-data/biota.tsv -a http://localhost:7000/oauth2/access_token/ 
+	# start indexing in espt
+	#@echo "When browsing tree, clicking the root node doesn't list the children?"
+	#firefox http://localhost:7000/api/taxonomy/tree/1/
 
 test:
 	./plutof-conf/curl_test.sh
