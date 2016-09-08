@@ -10,10 +10,10 @@ init:
 	docker-compose up -d db es
 	sleep 10
 	docker-compose up -d web
-	docker exec dwclassifications_web_1 make install
-	docker exec dwclassifications_web_1 python manage.py collectstatic --noinput
-	docker exec dwclassifications_web_1 sh -c "cat /code/add_oauth2_client.py | python manage.py shell"
-#	docker exec dwclassifications_web_1 make test 2>&1 | tee -a tests.log
+	docker exec classificationsdocker_web_1 make install
+	docker exec classificationsdocker_web_1 python manage.py collectstatic --noinput
+	docker exec classificationsdocker_web_1 sh -c "cat /code/add_oauth2_client.py | python manage.py shell"
+#	docker exec classificationsdocker_web_1 make test 2>&1 | tee -a tests.log
 	docker-compose stop
 
 ul-biota:
