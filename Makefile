@@ -1,9 +1,20 @@
-ME=$(USER)
+PWD = $(shell pwd)
+ME = $(USER)
+
 all: build init up
 
 clean: stop rm
 #	sudo chown -R $(ME):$(ME) ./plutof-taxonomy-module
 #	sudo chown -R $(ME):$(ME) ./pg-init
+
+dyntaxa-dl:
+	docker build -t dina/pythonr d2csv
+	docker run --rm -it --user rstudio \
+		-v $(PWD)/d2csv:/home/rstudio/foo \
+		-w /home/rstudio/foo \
+		dina/pythonr \
+#	sh -c "bash"
+	sh -c "make ID=5000013"
 
 init:
 	@echo "Installing db schema and running tests"
@@ -35,7 +46,7 @@ dyntaxa-tree:
 data:
 	@echo "Creating dyntaxa tree"
 	#python ./plutof-conf/csv_batch_upload.py -r 1 -b http://localhost:7000/api/ ./plutof-data/biota.tsv -a http://localhost:7000/oauth2/access_token/ 
-	python ./plutof-taxonomy-module/doc/csv_batch_upload.py -c ./plutof-conf/credentials.cfg -r 1 ./plutof-data/biota.tsv
+	python ./plutof-taxonomy-module/doc/csv_batch_upload.py -c ./plutof-conf/credentials.cfg -r 1 ./d2csv/dyntaxa.tsv
 	# start indexing in espt
 	#@echo "When browsing tree, clicking the root node doesn't list the children?"
 	#firefox http://localhost:7000/api/taxonomy/tree/1/
