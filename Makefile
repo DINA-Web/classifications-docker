@@ -13,8 +13,8 @@ dyntaxa-dl:
 		-v $(PWD)/d2csv:/home/rstudio/foo \
 		-w /home/rstudio/foo \
 		dina/pythonr \
-#	sh -c "bash"
 	sh -c "make ID=5000013"
+#	sh -c "bash"
 
 init:
 	@echo "Installing db schema and running tests"
