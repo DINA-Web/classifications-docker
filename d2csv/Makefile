@@ -15,7 +15,8 @@ attribs:
 tsv: attribs
 	@echo "Creating tsv"
 	@Rscript ./d2csv.R
-	@rm attribs.csv dyntaxa.xml tree.csv dyntaxa.csv $(ID).csv
+	@cp tree.csv rels.csv
+	@rm dyntaxa.xml tree.csv dyntaxa.csv $(ID).csv
 
 clean:
-	@rm dyntaxa.tsv
+	@rm dyntaxa.tsv rels.csv attribs.csv
