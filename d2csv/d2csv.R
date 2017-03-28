@@ -1,8 +1,11 @@
 library("xml2")
 library("dplyr")
 library("purrr")
+library("data.tree")
+library("readr")
 
-base <- paste0(getwd(), "/")  # "~/repos/dina-web/dw-classifications/plutof-data/"
+#base <- paste0(getwd(), "/")  # "~/repos/dina-web/dw-classifications/plutof-data/"
+base <- "/mnt/data/projects/classifications-docker/d2csv/"
 header <- readLines(paste0(base, "header.xml"))
 footer <- readLines(paste0(base, "dyntaxa.xml"), warn = FALSE)[-c(1:5)]
 doc <- paste(collapse = "\n", c(header, footer))
@@ -33,7 +36,6 @@ links <-
 
 out <- paste0(base, "tree.csv")
 write.csv(links, file = out, row.names = FALSE)
-
 links <- tbl_df(read.csv(file = out))
 
 # combine tree relations and node data into one dataset
@@ -59,10 +61,10 @@ nodelink <- tbl_df(read.csv(file = out))
 
 tsv <- 
   nodelink %>% 
-  select(taxon_id = Id, parent_taxon_id = Parent, 
+  select(taxonID = Id, parentNameUsageID = Parent,
          taxon_rank_id = CategoryId,
-         epithet = ScientificName, author = Author, 
-         code = Guid, CommonName) %>%
+         author = Author,
+         code = Guid, everything()) %>%
   mutate(CommonName = trimws(CommonName)) %>%
   mutate(use_parentheses = ifelse(grepl("(", author, fixed = TRUE), 1, NA)) %>%
   mutate(year = as.integer(gsub(".*?(\\d{1,4}).*", "\\1", perl = TRUE, author))) %>%
@@ -72,91 +74,166 @@ v <- gsub("[()\\]\\[]", "", tsv$author, perl = TRUE)
 a <- gsub(",*\\s*\\[*\\d{4}\\]*", "", v, perl = TRUE)
 tsv$author <- a
 
-plutof <- 
-  tsv %>%
-  select(taxon_id, parent_taxon_id, taxon_rank_id, epithet, 
-         author, year, code, vernacular_names, use_parentheses) #%>%
-  # TODO: ask Kessy to support taxon_rank_id = 0 in the load script
-  # the 200 below would require a rank_dict entry in csv_batch-upload.py which says 200:5
-#  mutate(taxon_rank_id = ifelse(taxon_rank_id == 0, 200, taxon_rank_id)) %>%
-  # should order by / arrange by the PlutoF order - join on the rank_dict and order on the right number (not left)
-#  arrange(taxon_rank_id, taxon_id, parent_taxon_id)
+dwca <- tsv %>%
+  # do not include Cultivar, Population, Collective taxon,
+  # Species complex, Morphotype/Morfotyp, Organism group,
+  # Microspecies, Cultivar group
+  filter(!(taxon_rank_id %in% c(22, 23, 27, 28, 32, 33, 50, 51))) %>%
+  # recode hybrids to species because DarwinCore prefers that
+  mutate(taxon_rank_id = ifelse(taxon_rank_id == 21, 17, taxon_rank_id)) %>%
+  # remap column names to fit with Darwin Core column names
+  select(everything())
 
+ranks <- read.csv(paste0(base,"taxonRank.csv"))
+res <- left_join(dwca, ranks, by = c("taxon_rank_id" = "taxonRankID")) %>%
+  select(taxonID, parentNameUsageID, scientificNameID = code, scientificName = ScientificName,  scientificNameAuthorship = author, namePublishedInYear = year,  CommonName, vernacularName = vernacular_names, taxonRankID = taxon_rank_id, taxonRank)
 
-# NOTE: translate dyntaxa ranks to plutof ranks
+res <- arrange(res,taxonRankID)
+res[which(is.na(res$parentNameUsageID)), ]$parentNameUsageID <- 0
 
-# this is copy/pasted from the csv_upload_batch.py script
-rank_dict <-
-  '{"1": "10", "2": "20", "3": "23", "4": "28", "5": "30", "6": "33", "7": "38",
-  "8": "40", "9": "43", "10": "48", "11": "50", "12": "53", "13": "55",
-  "14": "60", "15": "63", "16": "65", "17": "70", "18": "73", "19": "74",
-  "20": "76", "21": "100", "22": "90", "25": "34", "27": "67", "28": "67",
-  "29": "44", "30": "35", "31": "36", "32": "84", "33": "47", "35": "13",
-  "37": "14", "38": "18", "39": "24", "41": "37", "44": "56", "49": "69",
-  "50": "72"}'
-
-enums <-
-  '{"kingdom": "10", "phylum": "20", "subphylum": "23", "superclass": "28",
-  "class": "30", "subclass": "33", "superorder": "38", "order": "40",
-  "suborder": "43", "superfamily": "48", "family": "50", "subfamily": "53",
-  "tribe": "55", "genus": "60", "subgenus": "63", "section": "65",
-  "species": "70", "subspecies": "73", "variety": "74", "form": "76",
-  "hybrid": "100", "cultivar": "90", "infraclass": "34", "group_genus": "67",
-  "infraorder": "44", "division": "35", "subdivision": "36", "morph": "84",
-  "subkingdom": "13", "infrakingdom": "14", "superphylum": "18",
-  "infraphylum": "24", "infradivision": "37", "subtribe": "56",
-  "aggregate": "69", "microspecies": "72", "section": "47"}'
-
-pairs <- unlist(strsplit(rank_dict, ","))
-re <- ".*\\s*\"(\\d+)\":\\s*\"(\\d+)\".*"
-left <- as.numeric(gsub(re, "\\1", pairs))
-right <- as.numeric(gsub(re, "\\2", pairs))
-
-pairs <- unlist(strsplit(enums, ","))
-re <- ".*\\s*\"(.+)\":\\s*\"(\\d+)\".*"
-rank_desc <- gsub(re, "\\1", pairs)
-rank_id <- as.numeric(gsub(re, "\\2", pairs))
-
-pf_ranks <- 
-  data_frame(taxon_rank_id = left, plutof_rank_id = right) %>% 
-  right_join(data_frame(rank_desc, plutof_rank_id = rank_id))
-
-# add biota rank
-pf_ranks <- 
-  data_frame(
-    taxon_rank_id = 0, 
-    plutof_rank_id = 5, 
-    rank_desc = "superkingdom") %>% 
-  bind_rows(pf_ranks)  
-
-missing_ranks_report <- 
-  plutof %>% 
-  left_join(pf_ranks) %>%
-#  filter(epithet == "Biota") 
-  filter(is.na(plutof_rank_id)) %>% 
-  distinct(taxon_rank_id, plutof_rank_id, rank_desc, taxon_id) %>%
-  select(taxon_rank_id, plutof_rank_id, rank_desc, taxon_id)
-
-res <-
-  plutof %>% 
-  left_join(pf_ranks) %>%
-  filter(!is.na(plutof_rank_id))
-
-# NOTE: DONT IGNORE: the first parent_id should be 1
-#plutof$parent_taxon_id[which(is.na(plutof$parent_taxon_id))] <- 0
-res[which(is.na(res$parent_taxon_id)), ]$parent_taxon_id <- 1
-
-
-res <- 
-  res %>%
-  arrange(plutof_rank_id, taxon_id, parent_taxon_id) %>%
-  select(-taxon_rank_id, -rank_desc) %>%
-  rename(taxon_rank_id = plutof_rank_id) %>%
-  select(taxon_id, parent_taxon_id, taxon_rank_id, everything())
-
-# 3000188	0	40	Lepidoptera	Linnaeus	1758	3000188	fjärilar:swe	
-# 2002975	3000188	48	Hesperioidea	Latreille	1809	2002975	tjockhuvudfjärilar:swe	
-
-out <- paste0(base, "dyntaxa.tsv")
-write.table(res, file = out, sep = "\t", 
+out <- paste0(base, "dyntaxa-dwca.tsv")
+write.table(res, file = out, sep = "\t",
   row.names = FALSE, na = "", quote = FALSE)
+
+my_tree <- FromDataFrameNetwork(as.data.frame(res))
+print(my_tree, "level")
+
+# fcn to get ancestors as a "long" data frame
+# on the form: from_node, to_node, distance/hops
+ancestors_as_df <- function(my_node) {
+  node <- my_node$name
+  ancestor <- rev(my_node$path)
+  distance <- (1:my_node$level) - 1
+  
+  data_frame(#stringsAsFactors = FALSE,
+    node = as.double(node), 
+    ancestor = as.double(ancestor), 
+    distance
+  )
+}
+
+# demo how to get ancestors for just one single node
+# ancestors_as_df(my_node)
+
+# demo how to traverse tree, get ancestors for all those nodes
+my_nodes <- Traverse(my_tree, c("level"))
+
+ancestors <- map_df(my_nodes, ancestors_as_df)
+
+# the closure table in "ancestors" contains 
+# edges from self to self with distance 0 hops
+# we're mostly not interested in those edges/relations
+
+df <- 
+  ancestors #%>% 
+  #filter(distance > 0)
+
+# demo how to use the df closure table 
+# to get ancestors for a given node id
+#df %>% filter(node == 248439)
+
+# now we want to have rank data 
+# for each node at specific rank levels
+# for this we need to know each node's
+# categoryId/rank
+
+# get category/rank for each node
+#attribs <- read_delim(
+#  delim = "\t",
+#  file = paste0(base,"attribs.csv")
+#)
+
+# for now, just use the CategoryId attribute
+# we select those columns and throw the rest away
+attribs <- 
+  res %>% 
+  select(Id = taxonID, CategoryId = taxonRankID, ScientificName = scientificName)
+
+# demo: what unique rank ids are represented?
+rank_ids <- 
+  df %>% 
+  left_join(attribs, by = c("node" = "Id")) %>%
+  .$CategoryId %>%
+  unique
+
+rank_ids
+
+# choose a set of n ranks that we need for each node
+# five_ranks <- sample(rank_ids, size = 5, replace = FALSE)
+five_ranks <- sort(rank_ids)[1:5]
+
+# use a bogus lookup for ranks for now ...
+# this needs to be replaced by proper data
+
+lu <- data_frame(
+  CategoryId = five_ranks, 
+  Category = c("Kingdom", "Phylum", "Species", "Genus", "Hybrid")
+)
+
+relevant_ranks <- c(1, 2, 5, 8, 11, 14, 17, 18:20)
+#relevant_ranks <- c(2, 5, 8, 11, 14, 17, 18:20)
+
+lu <-
+  ranks %>%
+  filter(taxonRankID %in% relevant_ranks) %>%
+  select(CategoryId = taxonRankID, Category = taxonRank)
+
+# add the rank descrption as node attributes 
+# and focus only on nodes of relevant ranks
+attrs <-  
+  attribs %>% 
+  filter(CategoryId %in% relevant_ranks) %>%
+  right_join(lu)
+
+attrs %>% filter(CategoryId == 1)
+# decorate the closure table with ancestor rank data
+decorated <- 
+  df %>% 
+  right_join(attrs, by = c("ancestor" = "Id")) %>%
+  #  filter(node == 6007253) %>%
+  select(-c(2:3))  # skip just some columns, select the rest
+
+# demo how to retrieve all nodes for a specific rank
+#decorated %>% filter(CategoryId == 1)
+
+# now we want to pivot (or spread data) to get 
+# specific rank levels for nodes across columns
+
+library(tidyr)
+
+#TODO: manash! figure out why there are NAs for node ids!!!
+
+wide <- 
+  decorated %>% 
+  #filter(!is.na(node)) %>%
+#  slice(c(709, 720))
+  # slice(-c(709, 720, 
+  #          804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814, 815, 
+  #           816, 817, 818, 819, 820, 822, 823, 824, 825, 826, 827, 828, 
+  #           829, 830, 831, 832, 833, 834, 835, 836, 837, 838, 839, 840, 
+  #           841, 842, 843, 844, 845, 846, 847, 848, 849, 850, 851, 852, 
+  #           853, 854, 855, 856, 857, 858, 859, 860, 861, 862, 863, 864, 
+  #           865, 866, 867, 868, 869, 870, 871, 872, 873, 874, 875, 876, 
+  #           877, 878, 879, 880, 881, 882, 883, 884, 885, 886, 887, 889, 
+  #           891, 892, 893, 894, 895, 896, 897, 898, 901, 902, 903, 904, 
+  #           905, 906, 907, 908, 909, 910, 911, 
+  #          912, 913, 914, 915, 916)) %>%
+  select(-CategoryId) %>%
+  spread(key = Category, value = ScientificName, fill = NA) %>%
+  select(taxonId = node, Kingdom, Phylum, Class, Order, Family, Genus, Species) 
+  #%>%
+  #mutate(Kingdom = NA) %>%
+  #select(taxonId, Kingdom, everything())
+
+# inspect the results
+wide
+View(wide)
+
+manash <- 
+  tsv %>% left_join(wide, by = c("taxonID" = "taxonId"))
+
+View(manash)
+
+# compare count to original data
+tally(wide)
+nrow(tsv)

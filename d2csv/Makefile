@@ -1,10 +1,10 @@
 ID = 5000013
 
-all: dl tsv
+all: taxonRank dl tsv
 
-dl:
+dl: taxonRank
 	@echo "Downloading from Dyntaxa for ID = $(ID)"
-	python dyntaxa.py --id $(ID)
+	@python dyntaxa.py --id $(ID)
 
 attribs:
 	@echo "Extracting taxon attribs"
@@ -18,5 +18,9 @@ tsv: attribs
 	@cp tree.csv rels.csv
 	@rm dyntaxa.xml tree.csv dyntaxa.csv $(ID).csv
 
+taxonRank:
+	@echo "Downloading Dyntaxa Taxon Rank Map"
+	@python taxonRank.py
+
 clean:
-	@rm dyntaxa.tsv rels.csv attribs.csv
+	@rm taxonRank.csv dyntaxa-dwca.tsv  rels.csv attribs.csv
